@@ -81,6 +81,7 @@ public class TenantServiceImpl implements TenantService{
 
 		Role role = roleRepository.findByName(assignRoleRequest.getRole())
 				.orElseThrow(() -> new RuntimeException("Role not found"));
+		 user.getRoles().clear();
 		user.getRoles().add(role);
 		userRepository.save(user);
 		return user.getEmail();
