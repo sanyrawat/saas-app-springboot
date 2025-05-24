@@ -68,6 +68,14 @@ public class User {
 		return roles;
 	}
 
+	public Tenant getTenant() {
+		return tenant;
+	}
+
+	public void setTenant(Tenant tenant) {
+		this.tenant = tenant;
+	}
+
 	public void setRoles(Set<Role> roles) {
 		this.roles = roles;
 	}
