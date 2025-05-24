@@ -4,6 +4,7 @@ import com.saasapp.saasApp.dto.AuthRequest;
 import com.saasapp.saasApp.entity.Role;
 import com.saasapp.saasApp.entity.Tenant;
 import com.saasapp.saasApp.entity.User;
+import com.saasapp.saasApp.enums.RoleEnum;
 import com.saasapp.saasApp.repository.RoleRepository;
 import com.saasapp.saasApp.repository.TenantRepository;
 import com.saasapp.saasApp.repository.UserRepository;
@@ -57,9 +58,9 @@ public class AuthController {
         Tenant tenant = tenantRepository.findById(request.getTenantId())
             .orElseThrow(() -> new RuntimeException("Tenant not found"));
         user.setTenant(tenant);
-        Role role = roleRepository.findByName("SUPPORT_ADMIN")
-        		.orElseThrow(() -> new RuntimeException("Default Role not found"));
-        user.setRoles(Set.of(role));
+//        Role role = roleRepository.findByName(RoleEnum.SYSTEM_ADMIN)
+//        		.orElseThrow(() -> new RuntimeException("Default Role not found"));
+       // user.setRoles(Set.of(role));
         userRepo.save(user);
         return ResponseEntity.ok("User registered under Tenant : "+ tenant.getName());
     }
