@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.saasapp.saasApp.service.impl.CustomUserDetailsService;
+import com.saasapp.saasApp.service.impl.RedisService;
 import com.saasapp.saasApp.utils.JwtUtil;
 
 import java.io.IOException;
@@ -23,6 +24,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
 	    @Autowired
 	    private CustomUserDetailsService userDetailsService;
+	    
+	    @Autowired
+	    private RedisService redisService;
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -37,8 +41,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-
         token = authHeader.substring(7);
+
+        if (redisService.isTokenBlacklisted(token)) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Token is blacklisted");
+            return;
+        }
+
         username = jwtUtil.extractUsername(token);
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {

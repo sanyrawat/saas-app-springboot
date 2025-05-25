@@ -5,15 +5,15 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.saasapp.saasApp.service.impl.RedisTestService;
+import com.saasapp.saasApp.service.impl.RedisService;
 
 @RestController
 @RequestMapping("/api/redis")
 public class RedisTestController {
 
-    private final RedisTestService redisService;
+    private final RedisService redisService;
 
-    public RedisTestController(RedisTestService redisService) {
+    public RedisTestController(RedisService redisService) {
         this.redisService = redisService;
     }
 

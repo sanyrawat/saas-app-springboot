@@ -1,5 +1,6 @@
 package com.saasapp.saasApp.service.impl;
 
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,19 +27,22 @@ public class LoginServiceImpl implements LoginService{
     private final PasswordEncoder passwordEncoder;
     private final TenantRepository tenantRepository;
     private final JwtUtil jwtUtil;
+    private final RedisService redisService;
     public LoginServiceImpl(
             AuthenticationManager authManager,
             UserRepository userRepo,
             PasswordEncoder passwordEncoder,
             JwtUtil jwtUtil,
             TenantRepository tenantRepository,
-            RoleRepository roleRepository
+            RoleRepository roleRepository,
+            RedisService redisService
     ) {
         this.authManager = authManager;
         this.userRepo = userRepo;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.tenantRepository = tenantRepository;
+        this.redisService = redisService;
     }
     
     @Override
@@ -63,15 +67,21 @@ public class LoginServiceImpl implements LoginService{
 
     @Override
     public String login(AuthRequest request) {
+    	String email = request.getEmail();
+    	if (redisService.getLoginAttempts(email) >= 5) {
+            throw new RuntimeException("Account locked due to too many failed attempts");
+        }
         try {
             authManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+            redisService.resetLoginAttempts(email);
 
-            User user = userRepo.findByEmail(request.getEmail())
+            User user = userRepo.findByEmail(email)
                     .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
             return jwtUtil.generateToken(request.getEmail(), user.getTenant().getId());
         } catch (BadCredentialsException ex) {
+        	redisService.incrementLoginAttempt(email);
             throw new BadCredentialsException("Invalid credentials");
         }
     }

@@ -1,5 +1,6 @@
 package com.saasapp.saasApp.service.impl;
 
+import java.util.List;
 import java.util.Set;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.saasapp.saasApp.dto.AssignRoleRequest;
 import com.saasapp.saasApp.dto.TenantRegisterRequestDto;
 import com.saasapp.saasApp.dto.TenantRegisterResponseDto;
+import com.saasapp.saasApp.dto.UserResponseDto;
 import com.saasapp.saasApp.entity.Role;
 import com.saasapp.saasApp.entity.Tenant;
 import com.saasapp.saasApp.entity.User;
@@ -85,5 +87,22 @@ public class TenantServiceImpl implements TenantService{
 		user.getRoles().add(role);
 		userRepository.save(user);
 		return user.getEmail();
+    }
+    
+    @Override
+    public List<UserResponseDto> getAllUsersByTenantId(Long tenantId) {
+    	List<User> users = userRepository.findByTenantId(tenantId);
+    	
+    	return users.stream().map(user -> {
+    		UserResponseDto userResponseDto = new UserResponseDto();
+    		userResponseDto.setEmail(user.getEmail());
+    		userResponseDto.setRole( user.getRoles().stream()
+                .findFirst() 
+                .map(Role::getName)
+                .orElse(null));
+    		userResponseDto.setUsername(user.getUsername());
+    		userResponseDto.setId(user.getId());
+    		return userResponseDto;
+    	}).toList();
     }
 }
