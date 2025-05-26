@@ -23,19 +23,25 @@ public class SecurityConfig {
     }
     
 
-	@Bean
-	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-	    http.csrf().disable()
-	        .authorizeHttpRequests(authz -> authz
-	            .requestMatchers("/api/auth/**", "/api/tenants/register", "/api/health").permitAll()
-	            .anyRequest().authenticated()
-	        )
-	        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-	        .and()
-	        .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.cors().and().csrf().disable()
+            .authorizeHttpRequests(authz -> authz
+                .requestMatchers(
+                    "/api/auth/login",
+                    "/api/auth/register",  // ✅ Add this explicitly
+                    "/api/tenants/register",
+                    "/api/health"
+                ).permitAll()
+                .anyRequest().authenticated()
+            )
+            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            .and()
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
-	    return http.build();
-	}
+        return http.build();
+    }
+
 
 	@Bean
 	public PasswordEncoder passwordEncoder() {

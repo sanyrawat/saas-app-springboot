@@ -1,6 +1,5 @@
 package com.saasapp.saasApp.dto;
 
-import com.saasapp.saasApp.entity.Role;
 import com.saasapp.saasApp.enums.RoleEnum;
 
 import lombok.Data;
