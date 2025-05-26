@@ -27,42 +27,50 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 	    
 	    @Autowired
 	    private RedisService redisService;
-    @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
-            throws ServletException, IOException {
+	    @Override
+	    protected void doFilterInternal(HttpServletRequest request,
+	                                    HttpServletResponse response,
+	                                    FilterChain filterChain)
+	            throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
-        final String token;
-        final String username;
+	        final String authHeader = request.getHeader("Authorization");
+	        final String token;
+	        final String username;
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-        token = authHeader.substring(7);
+	        // ✅ Defensive check to skip empty or malformed tokens
+	        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+	            filterChain.doFilter(request, response);
+	            return;
+	        }
 
-        if (redisService.isTokenBlacklisted(token)) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Token is blacklisted");
-            return;
-        }
+	        token = authHeader.substring(7); // Extract token after "Bearer "
 
-        username = jwtUtil.extractUsername(token);
+	        // ✅ Additional safe check to avoid parsing empty tokens
+	        if (token.trim().isEmpty()) {
+	            filterChain.doFilter(request, response);
+	            return;
+	        }
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            var userDetails = userDetailsService.loadUserByUsername(username);
-            System.out.println("Authorities from token: " + userDetails.getAuthorities());
+	        try {
+	            username = jwtUtil.extractUsername(token);
+	        } catch (Exception e) {
+	            // ✅ Log and ignore bad token
+	            System.out.println("Invalid JWT: " + e.getMessage());
+	            filterChain.doFilter(request, response);
+	            return;
+	        }
 
-            if (jwtUtil.validateToken(token)) {
-                var authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-                System.out.println("User authenticated: " + username);
-            }
-        }
-        filterChain.doFilter(request, response);
-    }
+	        // Continue authentication if valid
+	        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+	            var userDetails = userDetailsService.loadUserByUsername(username);
+	            if (jwtUtil.validateToken(token)) {
+	                var authToken = new UsernamePasswordAuthenticationToken(
+	                        userDetails, null, userDetails.getAuthorities());
+	                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+	                SecurityContextHolder.getContext().setAuthentication(authToken);
+	            }
+	        }
+	        filterChain.doFilter(request, response);
+	    }
+
 }
